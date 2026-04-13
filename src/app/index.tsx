@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,12 +23,42 @@ export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
   function handleSignIn() {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter both email and password.");
+    Keyboard.dismiss();
+    setLoading(true);
+
+    // reset erros
+    setEmailError(false);
+    setPasswordError(false);
+
+    let hasError = false;
+
+    // valida email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email)) {
+      setEmailError(true);
+      hasError = true;
+    }
+
+    // valida senha
+    if (!password.trim() || password.length < 6) {
+      setPasswordError(true);
+      hasError = true;
+    }
+
+    if (hasError) {
+      Alert.alert("Error", "Please fix the highlighted fields.");
+      setLoading(false);
       return;
     }
+
     Alert.alert("Sign In", "Signing in...");
+    setLoading(false);
   }
 
   return (
@@ -40,9 +71,7 @@ export default function Index() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={[styles.container, { backgroundColor: colors.background }]}
-        >
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
           <Image
             source={require("@/assets/images/DONE.png")}
             style={styles.illustration}
@@ -52,17 +81,21 @@ export default function Index() {
           <Text style={[styles.subtitle, { color: colors.text }]}>
             Please login to your account to continue.
           </Text>
+
           <View style={styles.form}>
             <Input
               placeholder="Email"
               keyboardType="email-address"
               onChangeText={setEmail}
+              style={emailError ? { borderColor: "red", borderWidth: 1 } : {}}
             />
             <Input
               placeholder="Password"
               secureTextEntry
               onChangeText={setPassword}
+              style={passwordError ? { borderColor: "red", borderWidth: 1 } : {}}
             />
+
             <Text style={[styles.forgotText, { color: colors.text }]}>
               Forgot your password?
               <Link href="/forgot-password" style={styles.footerLink}>
@@ -70,7 +103,12 @@ export default function Index() {
                 Tap here.
               </Link>
             </Text>
-            <Button label="Login" onPress={handleSignIn} />
+
+            <Button
+              label={loading ? "Loading..." : "Login"}
+              onPress={handleSignIn}
+              disabled={!email.trim() || !password.trim() || loading}
+            />
           </View>
 
           <Text style={[styles.footerText, { color: colors.text }]}>

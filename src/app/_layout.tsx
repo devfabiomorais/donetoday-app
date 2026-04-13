@@ -1,11 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { Image, Pressable } from "react-native";
+import { Image } from "react-native";
+import ThemeSwitcherButton from "../components/ThemeSwitcherButton";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { darkTheme, lightTheme } from "../theme/colors";
 
 function StackLayout() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const colors = theme === "dark" ? darkTheme : lightTheme;
 
   const logoIcon = () => (
@@ -19,26 +19,18 @@ function StackLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-
         headerTitle: logoIcon,
         headerTitleAlign: "center",
-
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
+        headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
-
-        headerRight: () => (
-          <Pressable onPress={toggleTheme} style={{ marginRight: 15 }}>
-            <Ionicons
-              name={theme === "dark" ? "sunny" : "moon"}
-              size={24}
-              color={colors.text}
-            />
-          </Pressable>
-        ),
+        headerRight: () => <ThemeSwitcherButton />,
       }}
-    />
+    >
+      {/* Exceções: nessas telas o logo não aparece */}
+      <Stack.Screen name="index" options={{ headerTitle: "" }} />
+      <Stack.Screen name="signup" options={{ headerTitle: "" }} />
+      <Stack.Screen name="forgot-password" options={{ headerTitle: "" }} />
+    </Stack>
   );
 }
 
