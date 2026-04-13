@@ -20,12 +20,23 @@ export default function ForgotPassword() {
   const colors = theme === "dark" ? darkTheme : lightTheme;
 
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState(false);
+
+  // valida email
+  function validateEmail(value: string) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const valid = emailRegex.test(value.trim());
+    setEmailError(!valid);
+    setIsEmailValid(valid);
+  }
 
   function handleResetPassword() {
-    if (!email.trim()) {
-      Alert.alert("Error", "Please enter your email.");
+    if (!isEmailValid) {
+      Alert.alert("Error", "Please enter a valid email.");
       return;
     }
+
     Alert.alert("Reset Password", "Sending reset link...");
   }
 
@@ -50,18 +61,31 @@ export default function ForgotPassword() {
           <Text style={[styles.title, { color: colors.text }]}>
             Forgot Password
           </Text>
+
           <Text style={[styles.subtitle, { color: colors.text }]}>
             Please enter your email to reset your password.
           </Text>
+
           <View style={styles.form}>
             <Input
               placeholder="Your Email"
               keyboardType="email-address"
+              value={email}
               onChangeText={setEmail}
+              onBlur={() => validateEmail(email)}
+              onFocus={() => setEmailError(false)}
+              style={
+                emailError ? { borderColor: "red", borderWidth: 1 } : {}
+              }
             />
 
-            <Button label="Reset Password" onPress={handleResetPassword} />
+            <Button
+              label="Reset Password"
+              onPress={handleResetPassword}
+              disabled={!isEmailValid}
+            />
           </View>
+
           <Text style={[styles.footerText, { color: colors.text }]}>
             Having trouble?
             <Link href="/forgot-password" style={styles.footerLink}>

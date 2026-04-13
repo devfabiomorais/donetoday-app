@@ -26,36 +26,35 @@ export default function Index() {
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
+  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
+
   const [loading, setLoading] = useState(false);
+
+  // valida email
+  function validateEmail(value: string) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const valid = emailRegex.test(value.trim());
+    setEmailError(!valid);
+    setIsEmailValid(valid);
+  }
+
+  // valida senha
+  function validatePassword(value: string) {
+    const valid = value.trim().length >= 6;
+    setPasswordError(!valid);
+    setIsPasswordValid(valid);
+  }
 
   function handleSignIn() {
     Keyboard.dismiss();
-    setLoading(true);
 
-    // reset erros
-    setEmailError(false);
-    setPasswordError(false);
-
-    let hasError = false;
-
-    // valida email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim() || !emailRegex.test(email)) {
-      setEmailError(true);
-      hasError = true;
-    }
-
-    // valida senha
-    if (!password.trim() || password.length < 6) {
-      setPasswordError(true);
-      hasError = true;
-    }
-
-    if (hasError) {
+    if (!isEmailValid || !isPasswordValid) {
       Alert.alert("Error", "Please fix the highlighted fields.");
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     Alert.alert("Sign In", "Signing in...");
     setLoading(false);
@@ -86,13 +85,20 @@ export default function Index() {
             <Input
               placeholder="Email"
               keyboardType="email-address"
+              value={email}
               onChangeText={setEmail}
+              onBlur={() => validateEmail(email)}
+              onFocus={() => setEmailError(false)}
               style={emailError ? { borderColor: "red", borderWidth: 1 } : {}}
             />
+
             <Input
               placeholder="Password"
               secureTextEntry
+              value={password}
               onChangeText={setPassword}
+              onBlur={() => validatePassword(password)}
+              onFocus={() => setPasswordError(false)}
               style={passwordError ? { borderColor: "red", borderWidth: 1 } : {}}
             />
 
@@ -107,7 +113,7 @@ export default function Index() {
             <Button
               label={loading ? "Loading..." : "Login"}
               onPress={handleSignIn}
-              disabled={!email.trim() || !password.trim() || loading}
+              disabled={!isEmailValid || !isPasswordValid || loading}
             />
           </View>
 
