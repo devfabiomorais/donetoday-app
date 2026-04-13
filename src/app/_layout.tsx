@@ -1,37 +1,51 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
+import { Image, Pressable } from "react-native";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
+import { darkTheme, lightTheme } from "../theme/colors";
+
+function StackLayout() {
+  const { theme, toggleTheme } = useTheme();
+  const colors = theme === "dark" ? darkTheme : lightTheme;
+
+  const logoIcon = () => (
+    <Image
+      source={require("@/assets/images/DONEicon.png")}
+      style={{ width: 120, height: 40, resizeMode: "contain" }}
+    />
+  );
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: true,
+
+        headerTitle: logoIcon,
+        headerTitleAlign: "center",
+
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerTintColor: colors.text,
+
+        headerRight: () => (
+          <Pressable onPress={toggleTheme} style={{ marginRight: 15 }}>
+            <Ionicons
+              name={theme === "dark" ? "sunny" : "moon"}
+              size={24}
+              color={colors.text}
+            />
+          </Pressable>
+        ),
+      }}
+    />
+  );
+}
 
 export default function Layout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: "#fff" }, // estilo da barra
-        tabBarActiveTintColor: "blue",            // cor do ícone/texto ativo
-        tabBarInactiveTintColor: "gray",          // cor do ícone/texto inativo
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Login",
-          tabBarIcon: () => <Ionicons name="log-in" size={24} />, // aqui você pode usar ícones do @expo/vector-icons
-        }}
-      />
-      <Tabs.Screen
-        name="signup"
-        options={{
-          title: "Sign Up",
-          tabBarIcon: () => <Ionicons name="person-add" size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="forgot-password"
-        options={{
-          href: null, // impede que apareça na barra
-        }}
-      />
-
-    </Tabs>
+    <ThemeProvider>
+      <StackLayout />
+    </ThemeProvider>
   );
 }
