@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useTheme } from "../context/ThemeContext";
 import { darkTheme, lightTheme } from "../theme/colors";
 
@@ -102,125 +100,125 @@ export default function SignUp() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.select({ ios: "padding", android: "height" })}
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: colors.background }} // 👈 resolve o filete branco
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }} // 👈 espaço real pra subir acima do teclado
+      enableOnAndroid
+      extraScrollHeight={120} // 👈 aumenta isso
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <View
-          style={[styles.container, { backgroundColor: colors.background }]}
-        >
-          <Image
-            source={require("@/assets/images/DONE.png")}
-            style={styles.illustration}
+        <Image
+          source={require("@/assets/images/DONE.png")}
+          style={styles.illustration}
+        />
+
+        <Text style={[styles.title, { color: colors.text }]}>
+          Sign Up
+        </Text>
+
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          Please create an account to continue.
+        </Text>
+
+        <View style={styles.form}>
+          <Input
+            placeholder="Name"
+            value={name}
+            onChangeText={setName}
+            onBlur={() => validateName(name)}
+            onFocus={() => setNameError(false)}
+            style={
+              nameError ? { borderColor: "red", borderWidth: 1 } : {}
+            }
           />
 
-          <Text style={[styles.title, { color: colors.text }]}>
-            Sign Up
+          <Input
+            placeholder="Email"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            onBlur={() => validateEmail(email)}
+            onFocus={() => setEmailError(false)}
+            style={
+              emailError ? { borderColor: "red", borderWidth: 1 } : {}
+            }
+          />
+
+          <Input
+            placeholder="Confirm Email"
+            keyboardType="email-address"
+            value={confirmEmail}
+            onChangeText={setConfirmEmail}
+            onBlur={() => validateConfirmEmail(confirmEmail)}
+            onFocus={() => setConfirmEmailError(false)}
+            style={
+              confirmEmailError
+                ? { borderColor: "red", borderWidth: 1 }
+                : {}
+            }
+          />
+
+          <Input
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            onBlur={() => validatePassword(password)}
+            onFocus={() => setPasswordError(false)}
+            style={
+              passwordError
+                ? { borderColor: "red", borderWidth: 1 }
+                : {}
+            }
+          />
+
+          <Input
+            placeholder="Confirm Password"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            onBlur={() => validateConfirmPassword(confirmPassword)}
+            onFocus={() => setConfirmPasswordError(false)}
+            style={
+              confirmPasswordError
+                ? { borderColor: "red", borderWidth: 1 }
+                : {}
+            }
+          />
+
+          <Button
+            label="Sign Up"
+            onPress={handleSignUp}
+            disabled={
+              !isNameValid ||
+              !isEmailValid ||
+              !isConfirmEmailValid ||
+              !isPasswordValid ||
+              !isConfirmPasswordValid
+            }
+          />
+
+          <Text style={[styles.disclaimerText, { color: colors.text }]}>
+            By clicking "Sign Up", I acknowledge that this app is not age-restricted and that minors should use it under parental or guardian supervision.
           </Text>
 
-          <Text style={[styles.subtitle, { color: colors.text }]}>
-            Please create an account to continue.
-          </Text>
-
-          <View style={styles.form}>
-            <Input
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-              onBlur={() => validateName(name)}
-              onFocus={() => setNameError(false)}
-              style={
-                nameError ? { borderColor: "red", borderWidth: 1 } : {}
-              }
-            />
-
-            <Input
-              placeholder="Email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => validateEmail(email)}
-              onFocus={() => setEmailError(false)}
-              style={
-                emailError ? { borderColor: "red", borderWidth: 1 } : {}
-              }
-            />
-
-            <Input
-              placeholder="Confirm Email"
-              keyboardType="email-address"
-              value={confirmEmail}
-              onChangeText={setConfirmEmail}
-              onBlur={() => validateConfirmEmail(confirmEmail)}
-              onFocus={() => setConfirmEmailError(false)}
-              style={
-                confirmEmailError
-                  ? { borderColor: "red", borderWidth: 1 }
-                  : {}
-              }
-            />
-
-            <Input
-              placeholder="Password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => validatePassword(password)}
-              onFocus={() => setPasswordError(false)}
-              style={
-                passwordError
-                  ? { borderColor: "red", borderWidth: 1 }
-                  : {}
-              }
-            />
-
-            <Input
-              placeholder="Confirm Password"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              onBlur={() => validateConfirmPassword(confirmPassword)}
-              onFocus={() => setConfirmPasswordError(false)}
-              style={
-                confirmPasswordError
-                  ? { borderColor: "red", borderWidth: 1 }
-                  : {}
-              }
-            />
-
-            <Button
-              label="Sign Up"
-              onPress={handleSignUp}
-              disabled={
-                !isNameValid ||
-                !isEmailValid ||
-                !isConfirmEmailValid ||
-                !isPasswordValid ||
-                !isConfirmPasswordValid
-              }
-            />
-          </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 32,
   },
   illustration: {
     width: "100%",
     height: 240,
     resizeMode: "contain",
-    marginTop: 62,
   },
   title: {
     fontSize: 24,
@@ -242,5 +240,10 @@ const styles = StyleSheet.create({
   footerLink: {
     color: "#3366FF",
     fontWeight: "700",
+  },
+  disclaimerText: {
+    fontSize: 10,
+    opacity: 0.7,
+    textAlign: "center",
   },
 });

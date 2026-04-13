@@ -5,13 +5,12 @@ import { useState } from "react";
 import {
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useTheme } from "../context/ThemeContext";
 import { darkTheme, lightTheme } from "../theme/colors";
 
@@ -41,9 +40,10 @@ export default function ForgotPassword() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.select({ ios: "padding", android: "height" })}
+    <KeyboardAwareScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      enableOnAndroid
+      extraScrollHeight={20}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
@@ -95,7 +95,7 @@ export default function ForgotPassword() {
           </Text>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 240,
     resizeMode: "contain",
-    marginTop: 62,
   },
   title: {
     fontSize: 24,

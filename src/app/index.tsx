@@ -6,13 +6,11 @@ import {
   Alert,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useTheme } from "../context/ThemeContext";
 import { darkTheme, lightTheme } from "../theme/colors";
 
@@ -61,85 +59,82 @@ export default function Index() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.select({ ios: "padding", android: "height" })}
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: colors.background }} // 👈 resolve o filete branco
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }} // 👈 espaço real pra subir acima do teclado
+      enableOnAndroid
+      extraScrollHeight={120} // 👈 aumenta isso
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-          <Image
-            source={require("@/assets/images/DONE.png")}
-            style={styles.illustration}
+        <Image
+          source={require("@/assets/images/DONE.png")}
+          style={styles.illustration}
+        />
+
+        <Text style={[styles.title, { color: colors.text }]}>Login</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          Please login to your account to continue.
+        </Text>
+
+        <View style={styles.form}>
+          <Input
+            placeholder="Email"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            onBlur={() => validateEmail(email)}
+            onFocus={() => setEmailError(false)}
+            style={emailError ? { borderColor: "red", borderWidth: 1 } : {}}
           />
 
-          <Text style={[styles.title, { color: colors.text }]}>Login</Text>
-          <Text style={[styles.subtitle, { color: colors.text }]}>
-            Please login to your account to continue.
-          </Text>
+          <Input
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            onBlur={() => validatePassword(password)}
+            onFocus={() => setPasswordError(false)}
+            style={passwordError ? { borderColor: "red", borderWidth: 1 } : {}}
+          />
 
-          <View style={styles.form}>
-            <Input
-              placeholder="Email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => validateEmail(email)}
-              onFocus={() => setEmailError(false)}
-              style={emailError ? { borderColor: "red", borderWidth: 1 } : {}}
-            />
-
-            <Input
-              placeholder="Password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => validatePassword(password)}
-              onFocus={() => setPasswordError(false)}
-              style={passwordError ? { borderColor: "red", borderWidth: 1 } : {}}
-            />
-
-            <Text style={[styles.forgotText, { color: colors.text }]}>
-              Forgot your password?
-              <Link href="/forgot-password" style={styles.footerLink}>
-                {" "}
-                Tap here.
-              </Link>
-            </Text>
-
-            <Button
-              label={loading ? "Loading..." : "Login"}
-              onPress={handleSignIn}
-              disabled={!isEmailValid || !isPasswordValid || loading}
-            />
-          </View>
-
-          <Text style={[styles.footerText, { color: colors.text }]}>
-            Don't have an account?
-            <Link href="/signup" style={styles.footerLink}>
+          <Text style={[styles.forgotText, { color: colors.text }]}>
+            Forgot your password?
+            <Link href="/forgot-password" style={styles.footerLink}>
               {" "}
-              Sign up.
+              Tap here.
             </Link>
           </Text>
+
+          <Button
+            label={loading ? "Loading..." : "Login"}
+            onPress={handleSignIn}
+            disabled={!isEmailValid || !isPasswordValid || loading}
+          />
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <Text style={[styles.footerText, { color: colors.text }]}>
+          Don't have an account?
+          <Link href="/signup" style={styles.footerLink}>
+            {" "}
+            Sign up.
+          </Link>
+        </Text>
+      </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 32,
   },
   illustration: {
     width: "100%",
     height: 240,
     resizeMode: "contain",
-    marginTop: 62,
   },
   title: {
     fontSize: 24,
