@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
 import { Image } from "react-native";
-import ThemeSwitcherButton from "../components/ThemeSwitcherButton";
+import ThemeSwitcherButton from "../components/ui/ThemeSwitcherButton";
+import { darkTheme, lightTheme } from "../constants/colors";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
-import { darkTheme, lightTheme } from "../theme/colors";
 
 function StackLayout() {
   const { theme } = useTheme();
@@ -27,9 +27,10 @@ function StackLayout() {
       }}
     >
       {/* Exceções: nessas telas o logo não aparece */}
-      <Stack.Screen name="index" options={{ headerTitle: "" }} />
-      <Stack.Screen name="signup" options={{ headerTitle: "" }} />
-      <Stack.Screen name="forgot-password" options={{ headerTitle: "" }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(auth)/login" options={{ headerTitle: "" }} />
+      <Stack.Screen name="(auth)/signup" options={{ headerTitle: "" }} />
+      <Stack.Screen name="(auth)/forgot-password" options={{ headerTitle: "" }} />
     </Stack>
   );
 }

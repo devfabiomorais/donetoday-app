@@ -1,33 +1,23 @@
-import { Button } from "@/components/button";
-import { Input } from "@/components/input";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
-  Image,
-  Keyboard,
+  ScrollView,
   StyleSheet,
   Text,
   View
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { darkTheme, lightTheme } from "../constants/colors";
 import { useTheme } from "../context/ThemeContext";
-import { darkTheme, lightTheme } from "../theme/colors";
 
-export default function Index() {
+export default function Home() {
   const { theme } = useTheme();
   const colors = theme === "dark" ? darkTheme : lightTheme;
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   const [emailError, setEmailError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-
   const [isEmailValid, setIsEmailValid] = useState(false);
-  const [isPasswordValid, setIsPasswordValid] = useState(false);
-
-  const [loading, setLoading] = useState(false);
 
   // valida email
   function validateEmail(value: string) {
@@ -37,98 +27,56 @@ export default function Index() {
     setIsEmailValid(valid);
   }
 
-  // valida senha
-  function validatePassword(value: string) {
-    const valid = value.trim().length >= 6;
-    setPasswordError(!valid);
-    setIsPasswordValid(valid);
-  }
-
-  function handleSignIn() {
-    Keyboard.dismiss();
-
-    if (!isEmailValid || !isPasswordValid) {
-      Alert.alert("Error", "Please fix the highlighted fields.");
+  function handleResetPassword() {
+    if (!isEmailValid) {
+      Alert.alert("Error", "Please enter a valid email.");
       return;
     }
 
-    setLoading(true);
-
-    Alert.alert("Sign In", "Signing in...");
-    setLoading(false);
+    Alert.alert("Reset Password", "Sending reset link...");
   }
 
   return (
     <KeyboardAwareScrollView
-      style={{ flex: 1, backgroundColor: colors.background }} // 👈 resolve o filete branco
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }} // 👈 espaço real pra subir acima do teclado
+      contentContainerStyle={{ flexGrow: 1 }}
       enableOnAndroid
-      extraScrollHeight={120} // 👈 aumenta isso
-      keyboardShouldPersistTaps="handled"
+      extraScrollHeight={20}
     >
-      <View
-        style={[styles.container, { backgroundColor: colors.background }]}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Image
-          source={require("@/assets/images/DONE.png")}
-          style={styles.illustration}
-        />
+        <View
+          style={[styles.container, { backgroundColor: colors.background }]}
+        >
 
-        <Text style={[styles.title, { color: colors.text }]}>Login</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>
-          Please login to your account to continue.
-        </Text>
-
-        <View style={styles.form}>
-          <Input
-            placeholder="Email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            onBlur={() => validateEmail(email)}
-            onFocus={() => setEmailError(false)}
-            style={emailError ? { borderColor: "red", borderWidth: 1 } : {}}
-          />
-
-          <Input
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            onBlur={() => validatePassword(password)}
-            onFocus={() => setPasswordError(false)}
-            style={passwordError ? { borderColor: "red", borderWidth: 1 } : {}}
-          />
-
-          <Text style={[styles.forgotText, { color: colors.text }]}>
-            Forgot your password?
-            <Link href="/forgot-password" style={styles.footerLink}>
-              {" "}
-              Tap here.
-            </Link>
+          <Text style={[styles.title, { color: colors.text }]}>
+            HOME
           </Text>
 
-          <Button
-            label={loading ? "Loading..." : "Login"}
-            onPress={handleSignIn}
-            disabled={!isEmailValid || !isPasswordValid || loading}
-          />
-        </View>
-
-        <Text style={[styles.footerText, { color: colors.text }]}>
-          Don't have an account?
           <Link href="/signup" style={styles.footerLink}>
             {" "}
             Sign up.
           </Link>
-        </Text>
-      </View>
+          <Link href="/(auth)/login" style={styles.footerLink}>
+            {" "}
+            Login.
+          </Link>
+          <Link href="/(auth)/forgot-password" style={styles.footerLink}>
+            {" "}
+            Forgot Password
+          </Link>
+
+        </View>
+      </ScrollView>
     </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 32,
   },
   illustration: {
@@ -139,6 +87,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "900",
+    alignContent: "center",
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
@@ -153,13 +103,11 @@ const styles = StyleSheet.create({
     color: "#585860",
     fontSize: 16,
   },
-  forgotText: {
-    textAlign: "left",
-    color: "#777777",
-    fontSize: 12,
-  },
   footerLink: {
     color: "#3366FF",
     fontWeight: "700",
+    alignContent: "center",
+    textAlign: "center",
+    marginTop: 26,
   },
 });

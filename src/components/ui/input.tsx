@@ -1,6 +1,6 @@
 import { StyleSheet, TextInput, TextInputProps } from "react-native";
-import { useTheme } from "../context/ThemeContext";
-import { darkTheme, lightTheme } from "../theme/colors";
+import { darkTheme, lightTheme } from "../../constants/colors";
+import { useTheme } from "../../context/ThemeContext";
 
 export function Input(props: TextInputProps) {
   const { theme } = useTheme();

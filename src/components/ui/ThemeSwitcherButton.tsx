@@ -2,8 +2,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable } from "react-native";
-import { useTheme } from "../context/ThemeContext";
-import { darkTheme, lightTheme } from "../theme/colors";
+import { darkTheme, lightTheme } from "../../constants/colors";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function ThemeSwitcherButton() {
   const { theme, toggleTheme } = useTheme();

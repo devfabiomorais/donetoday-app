@@ -1,5 +1,5 @@
-import { Button } from "@/components/button";
-import { Input } from "@/components/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -9,8 +9,8 @@ import {
   View
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useTheme } from "../context/ThemeContext";
-import { darkTheme, lightTheme } from "../theme/colors";
+import { darkTheme, lightTheme } from "../../constants/colors";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function SignUp() {
   const { theme } = useTheme();
