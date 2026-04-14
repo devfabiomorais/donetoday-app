@@ -1,4 +1,5 @@
-import { StyleSheet, TextInput, TextInputProps } from "react-native";
+import { BlurView } from "expo-blur";
+import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
 import { darkTheme, lightTheme } from "../../constants/colors";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -7,29 +8,60 @@ export function Input(props: TextInputProps) {
   const colors = theme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <TextInput
-      {...props}
-      placeholderTextColor={theme === "dark" ? "#aaa" : "#666"}
-      style={[
-        styles.input,
-        {
-          backgroundColor: colors.input,
-          color: colors.text,
-          borderColor: theme === "dark" ? "#333" : "#dcdcdc",
-        },
-        props.style, // mantém customizações externas
-      ]}
-    />
+    <View style={styles.wrapper}>
+      <BlurView
+        intensity={60}
+        tint={theme === "dark" ? "dark" : "light"}
+        style={[
+          styles.container,
+          {
+            borderColor:
+              theme === "dark"
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)",
+          },
+        ]}
+      >
+        <View style={styles.overlay} />
+
+        <TextInput
+          {...props}
+          placeholderTextColor={theme === "dark" ? "#aaa" : "#666"}
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+            },
+            props.style,
+          ]}
+        />
+      </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
+  wrapper: {
     width: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  container: {
     height: 48,
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 8,
+    justifyContent: "center",
+  },
+
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.1)"
+  },
+
+  input: {
+    flex: 1,
     fontSize: 16,
-    paddingLeft: 16,
+    paddingHorizontal: 16,
   },
 });
