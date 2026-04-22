@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { darkTheme, lightTheme } from "../../constants/colors";
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from "../../context/ThemeContext";
 
 export default function ForgotPassword() {
@@ -22,6 +23,9 @@ export default function ForgotPassword() {
   const [emailError, setEmailError] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
 
+  const { forgotPassword } = useAuth()
+  const [loading, setLoading] = useState(false)
+
   // valida email
   function validateEmail(value: string) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,13 +34,25 @@ export default function ForgotPassword() {
     setIsEmailValid(valid);
   }
 
-  function handleResetPassword() {
+  async function handleResetPassword() {
     if (!isEmailValid) {
-      Alert.alert("Error", "Please enter a valid email.");
-      return;
+      Alert.alert('Error', 'Please enter a valid email.')
+      return
     }
 
-    Alert.alert("Reset Password", "Sending reset link...");
+    try {
+      setLoading(true)
+      await forgotPassword(email)
+      Alert.alert(
+        'Email sent',
+        'If this email exists, a reset link has been sent to your inbox.'
+      )
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'An error occurred. Please try again.'
+      Alert.alert('Error', message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -80,10 +96,11 @@ export default function ForgotPassword() {
             />
 
             <Button
-              label="Reset Password"
+              label={loading ? 'Loading...' : 'Reset Password'}
               onPress={handleResetPassword}
-              disabled={!isEmailValid}
+              disabled={!isEmailValid || loading}
             />
+
           </View>
 
           <Text style={[styles.footerText, { color: colors.text }]}>

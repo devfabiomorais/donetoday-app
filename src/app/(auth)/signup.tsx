@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -10,6 +11,7 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { darkTheme, lightTheme } from "../../constants/colors";
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from "../../context/ThemeContext";
 
 export default function SignUp() {
@@ -34,6 +36,10 @@ export default function SignUp() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isConfirmPasswordValid, setIsConfirmPasswordValid] =
     useState(false);
+
+  const { signUp } = useAuth()
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
   // ===== VALIDATIONS =====
 
@@ -84,7 +90,7 @@ export default function SignUp() {
 
   // ===== SUBMIT =====
 
-  function handleSignUp() {
+  async function handleSignUp() {
     if (
       !isNameValid ||
       !isEmailValid ||
@@ -92,11 +98,22 @@ export default function SignUp() {
       !isPasswordValid ||
       !isConfirmPasswordValid
     ) {
-      Alert.alert("Error", "Please fix the highlighted fields.");
-      return;
+      Alert.alert('Error', 'Please fix the highlighted fields.')
+      return
     }
 
-    Alert.alert("Sign Up", "Signing up...");
+    try {
+      setLoading(true)
+      await signUp(name, email, password)
+      Alert.alert('Success', 'Account created! Please login.', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/login') }
+      ])
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'An error occurred. Please try again.'
+      Alert.alert('Error', message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -190,14 +207,15 @@ export default function SignUp() {
           />
 
           <Button
-            label="Sign Up"
+            label={loading ? 'Loading...' : 'Sign Up'}
             onPress={handleSignUp}
             disabled={
               !isNameValid ||
               !isEmailValid ||
               !isConfirmEmailValid ||
               !isPasswordValid ||
-              !isConfirmPasswordValid
+              !isConfirmPasswordValid ||
+              loading
             }
           />
 

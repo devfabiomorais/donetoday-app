@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "expo-router";
+import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
 import {
   Alert,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { darkTheme, lightTheme } from "../../constants/colors";
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from "../../context/ThemeContext";
 
 export default function Login() {
@@ -29,6 +30,9 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
 
+  const { signIn } = useAuth()
+  const router = useRouter()
+
   // valida email
   function validateEmail(value: string) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,18 +48,24 @@ export default function Login() {
     setIsPasswordValid(valid);
   }
 
-  function handleSignIn() {
-    Keyboard.dismiss();
+  async function handleSignIn() {
+    Keyboard.dismiss()
 
     if (!isEmailValid || !isPasswordValid) {
-      Alert.alert("Error", "Please fix the highlighted fields.");
-      return;
+      Alert.alert('Error', 'Please fix the highlighted fields.')
+      return
     }
 
-    setLoading(true);
-
-    Alert.alert("Sign In", "Signing in...");
-    setLoading(false);
+    try {
+      setLoading(true)
+      await signIn(email, password)
+      router.replace('/')
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'An error occurred. Please try again.'
+      Alert.alert('Error', message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
