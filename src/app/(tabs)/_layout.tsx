@@ -1,7 +1,23 @@
 import { Ionicons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
+import { Text, View } from 'react-native'
 import { darkTheme, lightTheme } from '../../constants/colors'
 import { useTheme } from '../../context/ThemeContext'
+
+function TabHeader({ title }: { title: string }) {
+  const { theme } = useTheme()
+  const colors = theme === 'dark' ? darkTheme : lightTheme
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, width: '100%' }}>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: '900' }}>{title}</Text>
+      <View style={{ flexDirection: 'row', gap: 16 }}>
+        <Ionicons name="search-outline" size={24} color={colors.text} />
+        <Ionicons name="notifications-outline" size={24} color={colors.text} />
+      </View>
+    </View>
+  )
+}
 
 export default function TabsLayout() {
   const { theme } = useTheme()
@@ -10,7 +26,8 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: { backgroundColor: colors.background },
         tabBarStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: '#3366FF',
         tabBarInactiveTintColor: theme === 'dark' ? '#888' : '#999',
@@ -20,6 +37,7 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
+          headerTitle: () => <TabHeader title="Home" />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -29,6 +47,7 @@ export default function TabsLayout() {
         name="workout"
         options={{
           title: 'Workout',
+          headerTitle: () => <TabHeader title="Workout" />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="barbell-outline" size={size} color={color} />
           ),
@@ -38,6 +57,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          headerTitle: () => <TabHeader title="Profile" />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

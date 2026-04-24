@@ -56,6 +56,8 @@ function StackLayout() {
         <Stack.Screen name="(auth)/signup" options={{ headerTitle: "" }} />
         <Stack.Screen name="(auth)/forgot-password" options={{ headerTitle: "" }} />
         <Stack.Screen name="(auth)/reset-password" options={{ headerTitle: "" }} />
+        <Stack.Screen name="routine/create" options={{ headerShown: false }} />
+        <Stack.Screen name="routine/add-exercise" options={{ headerShown: false }} />
       </Stack>
     </>
   );
