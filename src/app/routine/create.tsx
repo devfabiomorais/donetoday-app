@@ -1,7 +1,8 @@
+
 import { Input } from '@/components/ui/input'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Alert,
   Modal,
@@ -12,9 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { darkTheme, lightTheme } from '../../constants/colors'
 import { useTheme } from '../../context/ThemeContext'
+import { createRoutine } from '../../services/routines'
 import { routineStore } from '../../store/routineStore'
 
 const SET_TYPES = [
@@ -215,17 +218,23 @@ export default function CreateRoutine() {
   const [title, setTitle] = useState('')
   const [exercises, setExercises] = useState<RoutineExercise[]>([])
 
+  const lastSelectedCount = useRef(0)
+
   useFocusEffect(
     useCallback(() => {
-      if (routineStore.selectedExercises.length > 0) {
-        setExercises(
-          routineStore.selectedExercises.map((ex) => ({
+      const newExercises = routineStore.selectedExercises
+      if (newExercises.length > lastSelectedCount.current) {
+        const added = newExercises.slice(lastSelectedCount.current)
+        setExercises((prev) => [
+          ...prev,
+          ...added.map((ex) => ({
             ...ex,
             notes: '',
             restSeconds: 60,
             series: [{ type: 'N', kg: '', reps: '' }],
-          }))
-        )
+          })),
+        ])
+        lastSelectedCount.current = newExercises.length
       }
     }, [])
   )
@@ -277,7 +286,7 @@ export default function CreateRoutine() {
     )
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a routine title.')
       return
@@ -286,7 +295,26 @@ export default function CreateRoutine() {
       Alert.alert('Error', 'Please add at least one exercise.')
       return
     }
-    // salvar rotina - implementar depois
+
+    try {
+      await createRoutine({
+        name: title,
+        isPublic: false,
+        exercises: exercises.map((ex, index) => ({
+          exerciseId: ex.id,
+          order: index + 1,
+          sets: ex.series.length,
+          restSeconds: ex.restSeconds,
+        })),
+      })
+
+      routineStore.setSelectedExercises([])
+      lastSelectedCount.current = 0
+      router.replace('/(tabs)/workout' as any)
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'An error occurred. Please try again.'
+      Alert.alert('Error', message)
+    }
   }
 
   return (
@@ -310,9 +338,12 @@ export default function CreateRoutine() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={{ paddingBottom: 40 }}
+        enableOnAndroid
+        extraScrollHeight={120}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.section}>
           <Input placeholder="Routine Title" value={title} onChangeText={setTitle} />
@@ -394,7 +425,7 @@ export default function CreateRoutine() {
         >
           <Text style={styles.addButtonText}>+ Add Exercise</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </>
   )
 }
