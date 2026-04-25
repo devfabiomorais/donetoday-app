@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { darkTheme, lightTheme } from '../../constants/colors'
 import { useTheme } from '../../context/ThemeContext'
 import { getRoutines } from '../../services/routines'
+import { startWorkout } from '../../services/workouts'
 
 export default function Workout() {
   const { theme } = useTheme()
@@ -75,7 +76,24 @@ export default function Workout() {
                   {item.exercises?.length ?? 0} exercises
                 </Text>
               </View>
-              <TouchableOpacity style={styles.startButton}>
+              <TouchableOpacity
+                style={styles.startButton}
+                onPress={async () => {
+                  const workout = await startWorkout({
+                    name: item.name,
+                    routineId: item.id,
+                  })
+                  router.push({
+                    pathname: '/workout/active',
+                    params: {
+                      workoutId: workout.id,
+                      routineId: item.id,
+                      routineName: item.name,
+                      exercises: JSON.stringify(item.exercises),
+                    },
+                  })
+                }}
+              >
                 <Text style={styles.startButtonText}>Start</Text>
               </TouchableOpacity>
             </View>
