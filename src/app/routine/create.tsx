@@ -1,4 +1,3 @@
-
 import { Input } from '@/components/ui/input'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -45,12 +44,14 @@ const REST_OPTIONS = [
 ]
 
 type Serie = {
+  serieId: string
   type: string
   kg: string
   reps: string
 }
 
 type RoutineExercise = {
+  instanceId: string
   id: string
   name: string
   muscleGroups: string[]
@@ -60,25 +61,20 @@ type RoutineExercise = {
   series: Serie[]
 }
 
-// ─── RestSelector ─────────────────────────────────────────────────────────────
-function RestSelector({
-  value,
-  onChange,
-  theme,
-  colors,
-}: {
+function RestSelector({ value, onChange, theme, colors }: {
   value: number
   onChange: (v: number) => void
   theme: string
   colors: any
 }) {
   const [visible, setVisible] = useState(false)
+  const insets = useSafeAreaInsets()  // ← adicione aqui
   const selected = REST_OPTIONS.find((o) => o.value === value) ?? REST_OPTIONS[0]
 
   return (
     <>
       <TouchableOpacity
-        style={[styles.restButton, { borderColor: theme === 'dark' ? '#444' : '#ddd' }]}
+        style={[styles.restButton, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
         onPress={() => setVisible(true)}
       >
         <Ionicons name="timer-outline" size={16} color={theme === 'dark' ? '#aaa' : '#666'} />
@@ -88,53 +84,36 @@ function RestSelector({
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide">
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setVisible(false)} />
-        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-          <Text style={[styles.modalTitle, { color: colors.text }]}>Rest Time</Text>
-          <ScrollView style={{ maxHeight: 300 }}>
-            {REST_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.modalOption,
-                  option.value === value && styles.modalOptionSelected,
-                ]}
-                onPress={() => {
-                  onChange(option.value)
-                  setVisible(false)
-                }}
-              >
-                <Text
-                  style={[
-                    styles.modalOptionText,
-                    { color: colors.text },
-                    option.value === value && { color: '#3366FF', fontWeight: '700' },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        <View style={[styles.modalOverlay]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
+          <View style={{ backgroundColor: colors.background, paddingBottom: insets.bottom }}>
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Rest Time</Text>
+              <ScrollView style={{ maxHeight: 300 }}>
+                {REST_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.modalOption, option.value === value && styles.modalOptionSelected]}
+                    onPress={() => { onChange(option.value); setVisible(false) }}
+                  >
+                    <Text style={[styles.modalOptionText, { color: colors.text }, option.value === value && { color: '#3366FF', fontWeight: '700' }]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
         </View>
       </Modal>
     </>
   )
 }
 
-// ─── SerieRow ─────────────────────────────────────────────────────────────────
-function SerieRow({
-  serie,
-  index,
-  onUpdateType,
-  onUpdateReps,
-  onRemove,
-  onUpdateKg,
-  theme,
-  colors,
-}: {
+function SerieRow({ serie, isFirst, onUpdateType, onUpdateReps, onRemove, onUpdateKg, theme, colors }: {
   serie: Serie
   index: number
+  isFirst: boolean
   exerciseId: string
   onUpdateType: (v: string) => void
   onUpdateReps: (v: string) => void
@@ -144,12 +123,12 @@ function SerieRow({
   colors: any
 }) {
   const [visible, setVisible] = useState(false)
+  const insets = useSafeAreaInsets()  // ← adicione aqui
   const currentType = SET_TYPES.find((t) => t.code === serie.type) ?? SET_TYPES[1]
 
   return (
     <>
       <View style={styles.serieRow}>
-        {/* Type selector */}
         <TouchableOpacity
           style={[styles.typeButton, { backgroundColor: currentType.color + '33', borderColor: currentType.color }]}
           onPress={() => setVisible(true)}
@@ -163,52 +142,53 @@ function SerieRow({
           keyboardType="numeric"
           value={serie.kg}
           onChangeText={onUpdateKg}
-          style={[styles.repsInput, { color: colors.text, borderColor: theme === 'dark' ? '#444' : '#ddd' }]}
+          style={[styles.repsInput, { color: colors.text, backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
         />
 
-        {/* Reps input */}
         <TextInput
           placeholder="0"
           placeholderTextColor={theme === 'dark' ? '#555' : '#aaa'}
           keyboardType="numeric"
           value={serie.reps}
           onChangeText={onUpdateReps}
-          style={[styles.repsInput, { color: colors.text, borderColor: theme === 'dark' ? '#444' : '#ddd' }]}
+          style={[styles.repsInput, { color: colors.text, backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
         />
 
-        {/* Remove */}
-        <TouchableOpacity onPress={onRemove}>
-          <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-        </TouchableOpacity>
+        {!isFirst && (
+          <TouchableOpacity onPress={onRemove}>
+            <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+          </TouchableOpacity>
+        )}
+
+        {isFirst && <View style={{ width: 18 }} />}
       </View>
 
-      {/* Set type modal */}
       <Modal visible={visible} transparent animationType="slide">
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setVisible(false)} />
-        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-          <Text style={[styles.modalTitle, { color: colors.text }]}>Set Type</Text>
-          {SET_TYPES.map((type) => (
-            <TouchableOpacity
-              key={type.code}
-              style={styles.modalOption}
-              onPress={() => {
-                onUpdateType(type.code)
-                setVisible(false)
-              }}
-            >
-              <View style={[styles.typeTag, { backgroundColor: type.color + '33', borderColor: type.color }]}>
-                <Text style={[styles.typeTagText, { color: type.color }]}>{type.code}</Text>
-              </View>
-              <Text style={[styles.modalOptionText, { color: colors.text }]}>{type.label}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={[styles.modalOverlay]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
+          <View style={{ backgroundColor: colors.background, paddingBottom: insets.bottom }}>
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Set Type</Text>
+              {SET_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.code}
+                  style={styles.modalOption}
+                  onPress={() => { onUpdateType(type.code); setVisible(false) }}
+                >
+                  <View style={[styles.typeTag, { backgroundColor: type.color + '33', borderColor: type.color }]}>
+                    <Text style={[styles.typeTagText, { color: type.color }]}>{type.code}</Text>
+                  </View>
+                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{type.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
       </Modal>
     </>
   )
 }
 
-// ─── CreateRoutine ─────────────────────────────────────────────────────────────
 export default function CreateRoutine() {
   const { theme } = useTheme()
   const colors = theme === 'dark' ? darkTheme : lightTheme
@@ -217,8 +197,12 @@ export default function CreateRoutine() {
 
   const [title, setTitle] = useState('')
   const [exercises, setExercises] = useState<RoutineExercise[]>([])
-
+  const [cancelModalVisible, setCancelModalVisible] = useState(false)
   const lastSelectedCount = useRef(0)
+
+  function newSerie(): Serie {
+    return { serieId: Math.random().toString(36).slice(2), type: 'N', kg: '', reps: '' }
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -229,9 +213,10 @@ export default function CreateRoutine() {
           ...prev,
           ...added.map((ex) => ({
             ...ex,
+            instanceId: Math.random().toString(36).slice(2),
             notes: '',
             restSeconds: 60,
-            series: [{ type: 'N', kg: '', reps: '' }],
+            series: [newSerie()],
           })),
         ])
         lastSelectedCount.current = newExercises.length
@@ -239,51 +224,64 @@ export default function CreateRoutine() {
     }, [])
   )
 
-  function updateNote(exerciseId: string, note: string) {
+  function updateNote(instanceId: string, note: string) {
     setExercises((prev) =>
-      prev.map((ex) => (ex.id === exerciseId ? { ...ex, notes: note } : ex))
+      prev.map((ex) => (ex.instanceId === instanceId ? { ...ex, notes: note } : ex))
     )
   }
 
-  function updateRest(exerciseId: string, restSeconds: number) {
+  function updateRest(instanceId: string, restSeconds: number) {
     setExercises((prev) =>
-      prev.map((ex) => (ex.id === exerciseId ? { ...ex, restSeconds } : ex))
+      prev.map((ex) => (ex.instanceId === instanceId ? { ...ex, restSeconds } : ex))
     )
   }
 
-  function updateSerie(exerciseId: string, serieIndex: number, field: keyof Serie, value: string) {
+  function updateSerie(instanceId: string, serieId: string, field: keyof Omit<Serie, 'serieId'>, value: string) {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.id === exerciseId
-          ? {
-            ...ex,
-            series: ex.series.map((s, i) =>
-              i === serieIndex ? { ...s, [field]: value } : s
-            ),
-          }
+        ex.instanceId === instanceId
+          ? { ...ex, series: ex.series.map((s) => s.serieId === serieId ? { ...s, [field]: value } : s) }
           : ex
       )
     )
   }
 
-  function addSerie(exerciseId: string) {
+  function addSerie(instanceId: string) {
+    setExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.instanceId !== instanceId) return ex
+        const last = ex.series[ex.series.length - 1]
+        return {
+          ...ex,
+          series: [...ex.series, { ...last, serieId: Math.random().toString(36).slice(2) }],
+        }
+      })
+    )
+  }
+
+  function removeSerie(instanceId: string, serieId: string) {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.id === exerciseId
-          ? { ...ex, series: [...ex.series, { ...ex.series[ex.series.length - 1] }] }
+        ex.instanceId === instanceId
+          ? { ...ex, series: ex.series.filter((s) => s.serieId !== serieId) }
           : ex
       )
     )
   }
 
-  function removeSerie(exerciseId: string, serieIndex: number) {
-    setExercises((prev) =>
-      prev.map((ex) =>
-        ex.id === exerciseId
-          ? { ...ex, series: ex.series.filter((_, i) => i !== serieIndex) }
-          : ex
-      )
-    )
+  function removeExercise(instanceId: string) {
+    setExercises((prev) => prev.filter((ex) => ex.instanceId !== instanceId))
+  }
+
+  function handleCancel() {
+    setCancelModalVisible(true)
+  }
+
+  function confirmCancel() {
+    setCancelModalVisible(false)
+    routineStore.setSelectedExercises([])
+    lastSelectedCount.current = 0
+    router.back()
   }
 
   async function handleSave() {
@@ -319,17 +317,34 @@ export default function CreateRoutine() {
 
   return (
     <>
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: colors.background,
-            borderBottomColor: theme === 'dark' ? '#333' : '#eee',
-            paddingTop: insets.top + 12,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
+      {/* Cancel confirmation modal */}
+      <Modal visible={cancelModalVisible} transparent animationType="fade">
+        <View style={styles.cancelModalOverlay}>
+          <View style={[styles.cancelModalContent, { backgroundColor: colors.background }]}>
+            <Text style={[styles.cancelModalTitle, { color: colors.text }]}>Discard Routine?</Text>
+            <Text style={[styles.cancelModalText, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+              Are you sure you want to cancel? Your changes will be lost.
+            </Text>
+            <View style={styles.cancelModalButtons}>
+              <TouchableOpacity
+                style={[styles.cancelModalButton, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
+                onPress={() => setCancelModalVisible(false)}
+              >
+                <Text style={[styles.cancelModalButtonText, { color: colors.text }]}>Keep Editing</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cancelModalButton, { backgroundColor: '#FF3B30' }]}
+                onPress={confirmCancel}
+              >
+                <Text style={[styles.cancelModalButtonText, { color: '#fff' }]}>Discard</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: theme === 'dark' ? '#333' : '#eee', paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>New Routine</Text>
@@ -340,7 +355,7 @@ export default function CreateRoutine() {
 
       <KeyboardAwareScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
         enableOnAndroid
         extraScrollHeight={120}
         keyboardShouldPersistTaps="handled"
@@ -361,31 +376,34 @@ export default function CreateRoutine() {
         {exercises.length > 0 && (
           <View style={styles.section}>
             {exercises.map((exercise) => (
-              <View key={exercise.id} style={[styles.exerciseCard, { backgroundColor: colors.input }]}>
+              <View key={exercise.instanceId} style={[styles.exerciseCard, { backgroundColor: colors.input }]}>
 
                 <View style={styles.exerciseHeader}>
                   <View style={[styles.exerciseAvatar, { backgroundColor: theme === 'dark' ? '#333' : '#eee' }]}>
                     <Ionicons name="body-outline" size={24} color={theme === 'dark' ? '#aaa' : '#666'} />
                   </View>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={[styles.exerciseName, { color: colors.text }]}>{exercise.name}</Text>
                     <Text style={[styles.exerciseMuscle, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
                       {exercise.muscleGroups?.[0]?.replace(/_/g, ' ')}
                     </Text>
                   </View>
+                  <TouchableOpacity onPress={() => removeExercise(exercise.instanceId)}>
+                    <Ionicons name="close-circle-outline" size={22} color={theme === 'dark' ? '#555' : '#aaa'} />
+                  </TouchableOpacity>
                 </View>
 
                 <TextInput
                   placeholder="Notes (optional)"
                   placeholderTextColor={theme === 'dark' ? '#555' : '#aaa'}
                   value={exercise.notes}
-                  onChangeText={(v) => updateNote(exercise.id, v)}
-                  style={[styles.notesInput, { color: colors.text, borderColor: theme === 'dark' ? '#444' : '#ddd' }]}
+                  onChangeText={(v) => updateNote(exercise.instanceId, v)}
+                  style={[styles.notesInput, { color: colors.text, backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
                 />
 
                 <RestSelector
                   value={exercise.restSeconds}
-                  onChange={(v) => updateRest(exercise.id, v)}
+                  onChange={(v) => updateRest(exercise.instanceId, v)}
                   theme={theme}
                   colors={colors}
                 />
@@ -398,20 +416,21 @@ export default function CreateRoutine() {
 
                 {exercise.series.map((serie, index) => (
                   <SerieRow
-                    key={index}
+                    key={serie.serieId}
                     serie={serie}
                     index={index}
-                    exerciseId={exercise.id}
-                    onUpdateType={(v) => updateSerie(exercise.id, index, 'type', v)}
-                    onUpdateReps={(v) => updateSerie(exercise.id, index, 'reps', v)}
-                    onUpdateKg={(v) => updateSerie(exercise.id, index, 'kg', v)}
-                    onRemove={() => removeSerie(exercise.id, index)}
+                    isFirst={index === 0}
+                    exerciseId={exercise.instanceId}
+                    onUpdateType={(v) => updateSerie(exercise.instanceId, serie.serieId, 'type', v)}
+                    onUpdateReps={(v) => updateSerie(exercise.instanceId, serie.serieId, 'reps', v)}
+                    onUpdateKg={(v) => updateSerie(exercise.instanceId, serie.serieId, 'kg', v)}
+                    onRemove={() => removeSerie(exercise.instanceId, serie.serieId)}
                     theme={theme}
                     colors={colors}
                   />
                 ))}
 
-                <TouchableOpacity style={styles.addSerieButton} onPress={() => addSerie(exercise.id)}>
+                <TouchableOpacity style={styles.addSerieButton} onPress={() => addSerie(exercise.instanceId)}>
                   <Text style={styles.addSerieText}>+ Add Set</Text>
                 </TouchableOpacity>
               </View>
@@ -431,14 +450,7 @@ export default function CreateRoutine() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   headerTitle: { fontSize: 17, fontWeight: '700' },
   cancelText: { color: '#888', fontSize: 16 },
   saveText: { color: '#3366FF', fontSize: 16, fontWeight: '700' },
@@ -446,80 +458,46 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 16 },
   emptyText: { fontSize: 14, textAlign: 'center', maxWidth: 240 },
-  addButton: {
-    alignSelf: 'center',
-    backgroundColor: '#3366FF',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
+  addButton: { alignSelf: 'center', backgroundColor: '#3366FF', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12, marginBottom: 24 },
   addButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   exerciseCard: { padding: 16, borderRadius: 12, marginBottom: 12 },
   exerciseName: { fontSize: 16, fontWeight: '600' },
   exerciseMuscle: { fontSize: 12, marginTop: 2, marginBottom: 10 },
   exerciseHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
   exerciseAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  notesInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  restButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-    alignSelf: 'flex-start',
-  },
+  notesInput: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, marginBottom: 10 },
+  restButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12, alignSelf: 'flex-start' },
   restButtonText: { fontSize: 13 },
   seriesHeader: { flexDirection: 'row', marginBottom: 6 },
   seriesHeaderText: { fontSize: 11, fontWeight: '700' },
   serieRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  typeButton: {
-    width: 40,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  typeButton: { width: 40, height: 36, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   typeButtonText: { fontSize: 12, fontWeight: '700' },
-  repsInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  repsInput: { flex: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, textAlign: 'center' },
   addSerieButton: { marginTop: 4, alignSelf: 'flex-start' },
   addSerieText: { color: '#3366FF', fontSize: 14, fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
   modalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 60  // era 40, aumenta para cobrir a área dos botões
   },
   modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16 },
   modalOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   modalOptionSelected: { opacity: 1 },
   modalOptionText: { fontSize: 15 },
-  typeTag: {
-    width: 36,
-    height: 32,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  typeTag: { width: 36, height: 32, borderRadius: 6, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   typeTagText: { fontSize: 11, fontWeight: '700' },
+  cancelModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  cancelModalContent: { width: '85%', borderRadius: 16, padding: 24 },
+  cancelModalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  cancelModalText: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
+  cancelModalButtons: { flexDirection: 'row', gap: 12 },
+  cancelModalButton: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  cancelModalButtonText: { fontSize: 15, fontWeight: '600' },
 })

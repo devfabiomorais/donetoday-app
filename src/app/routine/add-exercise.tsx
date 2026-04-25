@@ -64,7 +64,8 @@ export default function AddExercise() {
   }
 
   function handleAdd() {
-    routineStore.setSelectedExercises(selected)
+    const current = routineStore.selectedExercises
+    routineStore.setSelectedExercises([...current, ...selected])
     router.back()
   }
 
