@@ -1,8 +1,10 @@
+import GlassModal from '@/components/ui/GlassModal'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
+  Dimensions,
   Modal,
   ScrollView,
   StyleSheet,
@@ -15,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { darkTheme, lightTheme } from '../../constants/colors'
 import { useTheme } from '../../context/ThemeContext'
 import { getLastSets, saveWorkout } from '../../services/workouts'
+
+const { height } = Dimensions.get('window')
 
 const SET_TYPES = [
   { code: 'W', label: 'Warm Up', color: '#F5A623' },
@@ -94,11 +98,17 @@ export default function ActiveWorkout() {
     return () => clearInterval(interval)
   }, [])
 
+  const initializedRef = useRef(false)
+
   useEffect(() => {
     if (!params.exercises) return
+    if (initializedRef.current) return
+
     const rawExercises = JSON.parse(params.exercises)
     initExercises(rawExercises)
-  }, [])
+
+    initializedRef.current = true
+  }, [params.exercises])
 
   async function initExercises(raw: any[]) {
     const initialized: ActiveExercise[] = await Promise.all(
@@ -213,26 +223,54 @@ export default function ActiveWorkout() {
       {/* Cancel modal */}
       <Modal visible={cancelModalVisible} transparent animationType="fade">
         <View style={styles.cancelModalOverlay}>
-          <View style={[styles.cancelModalContent, { backgroundColor: colors.background }]}>
-            <Text style={[styles.cancelModalTitle, { color: colors.text }]}>Discard Workout?</Text>
-            <Text style={[styles.cancelModalText, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setCancelModalVisible(false)}
+          />
+
+          <GlassModal style={styles.fakeGlassCancel}>
+            <Text style={[styles.cancelModalTitle, { color: colors.text }]}>
+              Discard Workout?
+            </Text>
+
+            <Text
+              style={[
+                styles.cancelModalText,
+                { color: theme === 'dark' ? '#aaa' : '#666' },
+              ]}
+            >
               Are you sure? Your workout progress will be lost.
             </Text>
+
             <View style={styles.cancelModalButtons}>
               <TouchableOpacity
-                style={[styles.cancelModalButton, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
+                style={[
+                  styles.cancelModalButton,
+                  { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
+                ]}
                 onPress={() => setCancelModalVisible(false)}
               >
-                <Text style={[styles.cancelModalButtonText, { color: colors.text }]}>Keep Going</Text>
+                <Text style={[styles.cancelModalButtonText, { color: colors.text }]}>
+                  Keep Going
+                </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.cancelModalButton, { backgroundColor: '#FF3B30' }]}
+                style={[
+                  styles.cancelModalButton,
+                  { backgroundColor: '#FF3B30' },
+                ]}
                 onPress={() => router.replace('/(tabs)/workout' as any)}
               >
-                <Text style={[styles.cancelModalButtonText, { color: '#fff' }]}>Discard</Text>
+                <Text style={[styles.cancelModalButtonText, { color: '#fff' }]}>
+                  Discard
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
+
+          </GlassModal>
         </View>
       </Modal>
 
@@ -240,9 +278,13 @@ export default function ActiveWorkout() {
       <Modal visible={!!setTypeModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setSetTypeModal(null)} />
-          <View style={{ backgroundColor: colors.background, paddingBottom: insets.bottom }}>
-            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Set Type</Text>
+
+          <View style={{ paddingBottom: insets.bottom }}>
+            <GlassModal style={styles.fakeGlass}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Set Type
+              </Text>
+
               {SET_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.code}
@@ -254,13 +296,18 @@ export default function ActiveWorkout() {
                     }
                   }}
                 >
-                  <View style={[styles.typeTag, { backgroundColor: type.color + '33', borderColor: type.color }]}>
-                    <Text style={[styles.typeTagText, { color: type.color }]}>{type.code}</Text>
+                  <View style={[styles.typeTag, { backgroundColor: type.color + '33' }]}>
+                    <Text style={[styles.typeTagText, { color: type.color }]}>
+                      {type.code}
+                    </Text>
                   </View>
-                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{type.label}</Text>
+
+                  <Text style={[styles.modalOptionText, { color: colors.text }]}>
+                    {type.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </GlassModal>
           </View>
         </View>
       </Modal>
@@ -322,7 +369,7 @@ export default function ActiveWorkout() {
                 <View key={set.setId} style={[styles.setRow, set.completed && { opacity: 0.5 }]}>
                   {/* Type button */}
                   <TouchableOpacity
-                    style={[styles.typeButton, { backgroundColor: currentType.color + '33', borderColor: currentType.color }]}
+                    style={[styles.typeButton, { backgroundColor: currentType.color + '33' }]}
                     onPress={() => setSetTypeModal({ exerciseId: exercise.instanceId, setId: set.setId })}
                   >
                     <Text style={[styles.typeButtonText, { color: currentType.color }]}>{currentType.code}</Text>
@@ -403,23 +450,110 @@ const styles = StyleSheet.create({
   checkbox: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: '#555', alignItems: 'center', justifyContent: 'center' },
   addSetButton: { marginTop: 8, alignSelf: 'flex-start' },
   addSetText: { color: '#3366FF', fontSize: 14, fontWeight: '600' },
-  timerOverlay: { position: 'absolute', bottom: 100, left: 0, right: 0, zIndex: 999, alignItems: 'center' },
-  timerContainer: { backgroundColor: '#1a1a2e', borderRadius: 16, paddingHorizontal: 32, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', gap: 20 },
-  timerText: { color: '#fff', fontSize: 32, fontWeight: '700' },
-  timerSkip: { backgroundColor: '#333', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  timerSkipText: { color: '#fff', fontSize: 14 },
-  cancelModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  timerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+  },
+  timerContainer: {
+    height: height * 0.3,
+    width: '100%',
+
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+
+    paddingTop: '15%',
+
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+
+    backgroundColor: 'rgba(10, 12, 20, 0.55)',
+    position: 'relative',
+  },
+  timerText: {
+    color: '#fff',
+    fontSize: 72,
+    fontWeight: '800',
+  },
+  timerSkip: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  timerSkipText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  cancelModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center' },
   cancelModalContent: { width: '85%', borderRadius: 16, padding: 24 },
   cancelModalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   cancelModalText: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
   cancelModalButtons: { flexDirection: 'row', gap: 12 },
   cancelModalButton: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
   cancelModalButtonText: { fontSize: 15, fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
-  modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16 },
-  modalOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 60  // era 40, aumenta para cobrir a área dos botões
+  },
+  modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  modalOptionSetType: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 12,
+  },
   modalOptionText: { fontSize: 15 },
   typeTag: { width: 36, height: 32, borderRadius: 6, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   typeTagText: { fontSize: 11, fontWeight: '700' },
+  fakeGlass: {
+    width: '45%',
+
+    borderRadius: 20,
+    padding: 20,
+    overflow: 'hidden',
+
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  fakeGlassCancel: {
+    width: '85%',
+    maxWidth: 400,
+
+    borderRadius: 20,
+    padding: 20,
+    overflow: 'hidden',
+
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
 })

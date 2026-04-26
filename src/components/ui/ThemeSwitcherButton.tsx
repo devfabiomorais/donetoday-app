@@ -10,7 +10,7 @@ export default function ThemeSwitcherButton() {
   const colors = theme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <Pressable onPress={toggleTheme} style={{ marginRight: 15 }}>
+    <Pressable onPress={toggleTheme} >
       <Ionicons
         name={theme === "dark" ? "sunny" : "moon"}
         size={24}

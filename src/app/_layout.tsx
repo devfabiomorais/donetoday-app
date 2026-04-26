@@ -1,6 +1,6 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { Image } from "react-native";
+import { Image, View } from "react-native";
 import ThemeSwitcherButton from "../components/ui/ThemeSwitcherButton";
 import { darkTheme, lightTheme } from "../constants/colors";
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -47,7 +47,11 @@ function StackLayout() {
           headerTitleAlign: "center",
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
-          headerRight: () => <ThemeSwitcherButton />,
+          headerRight: () => (
+            <View style={{ marginRight: 15 }}>
+              <ThemeSwitcherButton />
+            </View>
+          ),
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

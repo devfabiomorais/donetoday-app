@@ -1,10 +1,12 @@
-import { Input } from '@/components/ui/input'
+import GlassModal from '@/components/ui/GlassModal'
 import { Ionicons } from '@expo/vector-icons'
+import { BlurView } from 'expo-blur'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
 import {
   Alert,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +20,8 @@ import { darkTheme, lightTheme } from '../../constants/colors'
 import { useTheme } from '../../context/ThemeContext'
 import { createRoutine } from '../../services/routines'
 import { routineStore } from '../../store/routineStore'
+
+const Glass = Platform.OS === 'ios' ? BlurView : View
 
 const SET_TYPES = [
   { code: 'W', label: 'Warm Up', color: '#F5A623' },
@@ -83,13 +87,14 @@ function RestSelector({ value, onChange, theme, colors }: {
         </Text>
       </TouchableOpacity>
 
+      {/* Rest Time Modal */}
       <Modal visible={visible} transparent animationType="slide">
         <View style={[styles.modalOverlay]}>
           <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
-          <View style={{ backgroundColor: colors.background, paddingBottom: insets.bottom }}>
-            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+          <View style={{ paddingBottom: insets.bottom }}>
+            <GlassModal style={styles.fakeGlass}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Rest Time</Text>
-              <ScrollView style={{ maxHeight: 300 }}>
+              <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
                 {REST_OPTIONS.map((option) => (
                   <TouchableOpacity
                     key={option.value}
@@ -102,7 +107,7 @@ function RestSelector({ value, onChange, theme, colors }: {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
+            </GlassModal>
           </View>
         </View>
       </Modal>
@@ -130,7 +135,7 @@ function SerieRow({ serie, isFirst, onUpdateType, onUpdateReps, onRemove, onUpda
     <>
       <View style={styles.serieRow}>
         <TouchableOpacity
-          style={[styles.typeButton, { backgroundColor: currentType.color + '33', borderColor: currentType.color }]}
+          style={[styles.typeButton, { backgroundColor: currentType.color + '33' }]}
           onPress={() => setVisible(true)}
         >
           <Text style={[styles.typeButtonText, { color: currentType.color }]}>{currentType.code}</Text>
@@ -163,25 +168,58 @@ function SerieRow({ serie, isFirst, onUpdateType, onUpdateReps, onRemove, onUpda
         {isFirst && <View style={{ width: 18 }} />}
       </View>
 
+      {/* Set Types Modal */}
       <Modal visible={visible} transparent animationType="slide">
         <View style={[styles.modalOverlay]}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
-          <View style={{ backgroundColor: colors.background, paddingBottom: insets.bottom }}>
-            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Set Type</Text>
-              {SET_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type.code}
-                  style={styles.modalOption}
-                  onPress={() => { onUpdateType(type.code); setVisible(false) }}
-                >
-                  <View style={[styles.typeTag, { backgroundColor: type.color + '33', borderColor: type.color }]}>
-                    <Text style={[styles.typeTagText, { color: type.color }]}>{type.code}</Text>
-                  </View>
-                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{type.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setVisible(false)}
+          />
+
+          <View style={{ paddingBottom: insets.bottom }}>
+            <GlassModal style={styles.fakeGlass}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Set Type
+              </Text>
+
+              <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
+                {SET_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.code}
+                    style={styles.modalOptionSetType}
+                    onPress={() => {
+                      onUpdateType(type.code)
+                      setVisible(false)
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.typeTag,
+                        { backgroundColor: type.color + '33' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.typeTagText,
+                          { color: type.color },
+                        ]}
+                      >
+                        {type.code}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </GlassModal>
           </View>
         </View>
       </Modal>
@@ -320,26 +358,53 @@ export default function CreateRoutine() {
       {/* Cancel confirmation modal */}
       <Modal visible={cancelModalVisible} transparent animationType="fade">
         <View style={styles.cancelModalOverlay}>
-          <View style={[styles.cancelModalContent, { backgroundColor: colors.background }]}>
-            <Text style={[styles.cancelModalTitle, { color: colors.text }]}>Discard Routine?</Text>
-            <Text style={[styles.cancelModalText, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+
+          {/* fundo escuro + click fora */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setCancelModalVisible(false)}
+          />
+
+          {/* modal (glass) */}
+          <GlassModal style={styles.fakeGlassCancel}>
+            <Text style={[styles.cancelModalTitle, { color: colors.text }]}>
+              Discard Routine?
+            </Text>
+
+            <Text
+              style={[
+                styles.cancelModalText,
+                { color: theme === 'dark' ? '#aaa' : '#666' },
+              ]}
+            >
               Are you sure you want to cancel? Your changes will be lost.
             </Text>
+
             <View style={styles.cancelModalButtons}>
               <TouchableOpacity
-                style={[styles.cancelModalButton, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' }]}
+                style={[
+                  styles.cancelModalButton,
+                  { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
+                ]}
                 onPress={() => setCancelModalVisible(false)}
               >
-                <Text style={[styles.cancelModalButtonText, { color: colors.text }]}>Keep Editing</Text>
+                <Text style={[styles.cancelModalButtonText, { color: colors.text }]}>
+                  Keep Editing
+                </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.cancelModalButton, { backgroundColor: '#FF3B30' }]}
                 onPress={confirmCancel}
               >
-                <Text style={[styles.cancelModalButtonText, { color: '#fff' }]}>Discard</Text>
+                <Text style={[styles.cancelModalButtonText, { color: '#fff' }]}>
+                  Discard
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </GlassModal>
+
         </View>
       </Modal>
 
@@ -361,7 +426,18 @@ export default function CreateRoutine() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.section}>
-          <Input placeholder="Routine Title" value={title} onChangeText={setTitle} />
+          <TextInput
+            placeholder="Routine Title"
+            placeholderTextColor="#535353"
+            value={title}
+            onChangeText={setTitle}
+            style={{
+              color: colors.text,
+              fontSize: 16,
+              paddingVertical: 8,
+              backgroundColor: 'transparent', // sem fundo
+            }}
+          />
         </View>
 
         {exercises.length === 0 && (
@@ -478,8 +554,9 @@ const styles = StyleSheet.create({
   addSerieText: { color: '#3366FF', fontSize: 14, fontWeight: '600' },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
     borderTopLeftRadius: 20,
@@ -487,17 +564,65 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 60  // era 40, aumenta para cobrir a área dos botões
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16 },
-  modalOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  modalOptionSetType: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
   modalOptionSelected: { opacity: 1 },
   modalOptionText: { fontSize: 15 },
   typeTag: { width: 36, height: 32, borderRadius: 6, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   typeTagText: { fontSize: 11, fontWeight: '700' },
-  cancelModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  cancelModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)', // controla o “embaçado fake”
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cancelModalContent: { width: '85%', borderRadius: 16, padding: 24 },
   cancelModalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   cancelModalText: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
   cancelModalButtons: { flexDirection: 'row', gap: 12 },
   cancelModalButton: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
   cancelModalButtonText: { fontSize: 15, fontWeight: '600' },
+  fakeGlass: {
+    width: '45%',
+
+    borderRadius: 20,
+    padding: 20,
+    overflow: 'hidden',
+
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  fakeGlassCancel: {
+    width: '85%',
+    maxWidth: 400,
+
+    borderRadius: 20,
+    padding: 20,
+    overflow: 'hidden',
+
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
 })
