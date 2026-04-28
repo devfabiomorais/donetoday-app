@@ -1,4 +1,5 @@
 import GlassModal from '@/components/ui/GlassModal'
+import { WorkoutSummaryModal } from '@/components/WorkoutSummaryModal'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
@@ -50,6 +51,7 @@ type ActiveExercise = {
   sets: ActiveSet[]
 }
 
+
 function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void }) {
   const [remaining, setRemaining] = useState(seconds)
 
@@ -74,6 +76,16 @@ function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void })
   )
 }
 
+const SET_TYPE_MAP: Record<string, string> = {
+  'W': 'WARMUP',
+  'N': 'NORMAL',
+  'F': 'FAILURE',
+  'D': 'DROPSET',
+  '0': 'POINT_ZERO',
+  'FD': 'FEEDER',
+  'C': 'CLUSTER_SET',
+}
+
 export default function ActiveWorkout() {
   const { theme } = useTheme()
   const colors = theme === 'dark' ? darkTheme : lightTheme
@@ -92,6 +104,8 @@ export default function ActiveWorkout() {
   const [saving, setSaving] = useState(false)
   const [setTypeModal, setSetTypeModal] = useState<{ exerciseId: string; setId: string } | null>(null)
   const elapsedRef = useRef(0)
+  const [summaryVisible, setSummaryVisible] = useState(false)
+  const [savedWorkout, setSavedWorkout] = useState<any>(null)
 
   useEffect(() => {
     const interval = setInterval(() => { elapsedRef.current += 1 }, 1000)
@@ -219,11 +233,13 @@ export default function ActiveWorkout() {
         }))
       )
 
-      await saveWorkout(params.workoutId, { sets: allSets })
-      router.replace('/(tabs)/workout' as any)
+      const saved = await saveWorkout(params.workoutId, { sets: allSets })
+
+      setSavedWorkout(saved)
+
+      setSummaryVisible(true)
     } catch (error: any) {
-      console.log('Save error:', JSON.stringify(error?.response?.data))
-      Alert.alert('Error', error?.response?.data?.message ?? 'Failed to save workout. Please try again.')
+      Alert.alert('Error', error?.response?.data?.message ?? 'Failed to save workout.')
     } finally {
       setSaving(false)
     }
@@ -231,6 +247,18 @@ export default function ActiveWorkout() {
 
   return (
     <>
+      {/* Summary modal */}
+      {savedWorkout && (
+        <WorkoutSummaryModal
+          visible={summaryVisible}
+          onClose={() => {
+            setSummaryVisible(false)
+            router.replace('/(tabs)/home' as any)
+          }}
+          workout={savedWorkout}
+        />
+      )}
+
       {/* Cancel modal */}
       <Modal visible={cancelModalVisible} transparent animationType="fade">
         <View style={styles.cancelModalOverlay}>
