@@ -195,6 +195,16 @@ export default function ActiveWorkout() {
     )
   }
 
+  const SET_TYPE_MAP: Record<string, string> = {
+    'W': 'WARMUP',
+    'N': 'NORMAL',
+    'F': 'FAILURE',
+    'D': 'DROPSET',
+    '0': 'POINT_ZERO',
+    'FD': 'FEEDER',
+    'C': 'CLUSTER_SET',
+  }
+
   async function handleSave() {
     setSaving(true)
     try {
@@ -204,7 +214,7 @@ export default function ActiveWorkout() {
           setNumber: i + 1,
           weight: s.kg ? parseFloat(s.kg) : undefined,
           reps: s.reps ? parseInt(s.reps) : undefined,
-          setType: s.type,
+          setType: SET_TYPE_MAP[s.type] ?? 'NORMAL',
           completed: s.completed,
         }))
       )
@@ -212,7 +222,8 @@ export default function ActiveWorkout() {
       await saveWorkout(params.workoutId, { sets: allSets })
       router.replace('/(tabs)/workout' as any)
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to save workout. Please try again.')
+      console.log('Save error:', JSON.stringify(error?.response?.data))
+      Alert.alert('Error', error?.response?.data?.message ?? 'Failed to save workout. Please try again.')
     } finally {
       setSaving(false)
     }
