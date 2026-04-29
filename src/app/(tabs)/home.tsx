@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -12,7 +13,7 @@ import {
 import { darkTheme, lightTheme } from '../../constants/colors'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { getWorkouts } from '../../services/workouts'
+import { deleteWorkout, getWorkouts } from '../../services/workouts'
 
 function formatDuration(startedAt: string, finishedAt: string) {
   const diff = new Date(finishedAt).getTime() - new Date(startedAt).getTime()
@@ -34,10 +35,18 @@ function formatDate(dateStr: string) {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function WorkoutCard({ workout, colors, theme }: { workout: any; colors: any; theme: string }) {
+function WorkoutCard({ workout, colors, theme, onDelete }: { workout: any; colors: any; theme: string; onDelete: (id: string) => void }) {
   const [menuVisible, setMenuVisible] = useState(false)
   const volume = formatVolume(workout.sets ?? [])
   const uniqueExercises = [...new Map((workout.sets ?? []).map((s: any) => [s.exerciseId, s])).values()].slice(0, 3)
+
+  const MENU_ITEMS = [
+    { label: 'Share workout', icon: 'share-social-outline', color: null },
+    { label: 'Save as routine', icon: 'save-outline', color: null },
+    { label: 'Copy workout', icon: 'copy-outline', color: null },
+    { label: 'Edit workout', icon: 'create-outline', color: null },
+    { label: 'Delete workout', icon: 'trash-outline', color: '#FF3B30' },
+  ]
 
   return (
     <View style={[styles.card, { backgroundColor: colors.input }]}>
@@ -55,7 +64,13 @@ function WorkoutCard({ workout, colors, theme }: { workout: any; colors: any; th
             {formatDate(workout.startedAt)}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(!menuVisible)}
+          style={[
+            styles.menuTrigger,
+            menuVisible && { backgroundColor: theme === 'dark' ? '#333' : '#e0e0e0' }
+          ]}
+        >
           <Ionicons name="ellipsis-horizontal" size={20} color={theme === 'dark' ? '#aaa' : '#888'} />
         </TouchableOpacity>
       </View>
@@ -63,9 +78,29 @@ function WorkoutCard({ workout, colors, theme }: { workout: any; colors: any; th
       {/* Menu */}
       {menuVisible && (
         <View style={[styles.menu, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5' }]}>
-          {['Share workout', 'Save as routine', 'Copy workout', 'Edit workout', 'Delete workout'].map((item, i) => (
-            <TouchableOpacity key={i} style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-              <Text style={[styles.menuText, { color: i === 4 ? '#FF3B30' : colors.text }]}>{item}</Text>
+          {MENU_ITEMS.map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false)
+                if (item.label === 'Delete workout') {
+                  Alert.alert(
+                    'Delete Workout',
+                    'Are you sure you want to delete this workout? This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: () => onDelete(workout.id) },
+                    ]
+                  )
+                }
+              }}
+            >
+              <Ionicons
+                name={item.icon as any}
+                size={22}
+                color={item.color ?? colors.text}
+              />
             </TouchableOpacity>
           ))}
         </View>
@@ -154,6 +189,15 @@ export default function Home() {
     }
   }
 
+  async function handleDelete(id: string) {
+    try {
+      await deleteWorkout(id)
+      setWorkouts((prev) => prev.filter((w) => w.id !== id))
+    } catch {
+      Alert.alert('Error', 'Failed to delete workout.')
+    }
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {loading ? (
@@ -171,7 +215,7 @@ export default function Home() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           renderItem={({ item }) => (
-            <WorkoutCard workout={item} colors={colors} theme={theme} />
+            <WorkoutCard workout={item} colors={colors} theme={theme} onDelete={handleDelete} />
           )}
         />
       )}
@@ -188,8 +232,23 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   userName: { fontSize: 15, fontWeight: '700' },
   dateText: { fontSize: 12, marginTop: 1 },
-  menu: { borderRadius: 12, padding: 8, marginBottom: 8 },
-  menuItem: { paddingVertical: 10, paddingHorizontal: 8 },
+  menuTrigger: {
+    padding: 6,
+    borderRadius: 8,
+  },
+  menu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  menuItem: {
+    padding: 4,
+  },
   menuText: { fontSize: 14 },
   routineName: { fontSize: 17, fontWeight: '700', marginBottom: 8 },
   cardRow3: { flexDirection: 'row', gap: 16, marginBottom: 12 },

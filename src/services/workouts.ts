@@ -31,3 +31,7 @@ export async function getLastSets(exerciseId: string, routineId?: string) {
   const { data } = await api.get(`/workouts/history/${exerciseId}${params}`)
   return data
 }
+
+export async function deleteWorkout(id: string) {
+  await api.delete(`/workouts/${id}`)
+}
