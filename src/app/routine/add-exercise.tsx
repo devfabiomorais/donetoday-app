@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -28,21 +30,42 @@ export default function AddExercise() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null)
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null)
+  const [muscleGroupModalVisible, setMuscleGroupModalVisible] = useState(false)
+  const [equipmentModalVisible, setEquipmentModalVisible] = useState(false)
+
+  const MUSCLE_GROUPS = ['UPPER_BACK', 'LOWER_BACK', 'LATISSIMUS', 'SIDE_SHOULDERS', 'FRONT_SHOULDERS', 'REAR_SHOULDERS', 'ROTATOR_CUFF', 'SHOULDERS', 'CHEST', 'UPPER_CHEST', 'LOWER_CHEST', 'TRICEPS', 'BICEPS', 'FOREARMS', 'HAND_MUSCLES', 'GRIP_MUSCLES', 'TRAPEZIUS', 'NECK', 'JAW', 'ABDOMINALS', 'OBLIQUES', 'SERRATUS', 'DEEP_CORE', 'GLUTES', 'HAMSTRINGS', 'QUADRICEPS', 'ABDUCTORS', 'ADDUCTORS', 'HIP_FLEXORS', 'HIPS', 'CALVES', 'TIBIALIS_ANTERIOR', 'FEET']
+
+  const EQUIPMENT_LIST = ['TRX', 'GYMNASTIC_RINGS', 'PARALLETTES', 'RESISTANCE_BANDS', 'RESISTANCE_TUBES', 'JUMP_ROPE', 'TIRE', 'AB_WHEEL', 'WEIGHTED_VEST', 'DUMBBELL', 'KETTLEBELL', 'BARBELL', 'WEIGHT_PLATES', 'MEDICINE_BALL', 'BALL', 'SLAM_BALL', 'BULGARIAN_BAG', 'SANDBAG', 'BATTLE_ROPE', 'GRIP_STRENGTHENERS', 'ANKLE_WRIST_WEIGHTS', 'PORTABLE_STEP_PLATFORM', 'AGILITY_LADDER', 'CONES', 'PUNCHING_BAG', 'FREESTANDING_PUNCHING_BAG', 'SPEED_BAG', 'DOUBLE_END_BAG', 'FOCUS_MITTS', 'THAI_PADS', 'BOXING_GLOVES', 'MMA_GLOVES', 'HAND_WRAPS', 'SHIN_GUARDS', 'HEADGEAR', 'MOUTHGUARD', 'OTHER', 'NO_EQUIPMENT']
+
   useEffect(() => {
     loadExercises()
   }, [])
 
   useEffect(() => {
-    if (search.trim() === '') {
-      setFiltered(exercises)
-    } else {
-      setFiltered(
-        exercises.filter((e) =>
-          e.name.toLowerCase().includes(search.toLowerCase())
-        )
+    let result = exercises
+
+    if (search.trim() !== '') {
+      result = result.filter((e) =>
+        e.name.toLowerCase().includes(search.toLowerCase())
       )
     }
-  }, [search, exercises])
+
+    if (selectedMuscleGroup) {
+      result = result.filter((e) =>
+        e.muscleGroups?.includes(selectedMuscleGroup)
+      )
+    }
+
+    if (selectedEquipment) {
+      result = result.filter((e) =>
+        e.equipment?.includes(selectedEquipment)
+      )
+    }
+
+    setFiltered(result)
+  }, [search, exercises, selectedMuscleGroup, selectedEquipment])
 
   async function loadExercises() {
     try {
@@ -100,13 +123,34 @@ export default function AddExercise() {
 
         {/* Filter buttons - placeholder */}
         <View style={styles.filtersRow}>
-          <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.input }]}>
-            <Ionicons name="barbell-outline" size={16} color={colors.text} />
-            <Text style={[styles.filterText, { color: colors.text }]}>Equipment</Text>
+          <TouchableOpacity
+            style={[styles.filterButton, { backgroundColor: selectedMuscleGroup ? '#3366FF' : colors.input }]}
+            onPress={() => setMuscleGroupModalVisible(true)}
+          >
+            <Ionicons name="body-outline" size={16} color={selectedMuscleGroup ? '#fff' : colors.text} />
+            <Text style={[styles.filterText, { color: selectedMuscleGroup ? '#fff' : colors.text }]}>
+              {selectedMuscleGroup ? selectedMuscleGroup.replace(/_/g, ' ') : 'Muscle Group'}
+            </Text>
+            {selectedMuscleGroup && (
+              <TouchableOpacity onPress={() => setSelectedMuscleGroup(null)}>
+                <Ionicons name="close-circle" size={16} color="#fff" />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.input }]}>
-            <Ionicons name="body-outline" size={16} color={colors.text} />
-            <Text style={[styles.filterText, { color: colors.text }]}>Muscle Group</Text>
+
+          <TouchableOpacity
+            style={[styles.filterButton, { backgroundColor: selectedEquipment ? '#3366FF' : colors.input }]}
+            onPress={() => setEquipmentModalVisible(true)}
+          >
+            <Ionicons name="barbell-outline" size={16} color={selectedEquipment ? '#fff' : colors.text} />
+            <Text style={[styles.filterText, { color: selectedEquipment ? '#fff' : colors.text }]}>
+              {selectedEquipment ? selectedEquipment.replace(/_/g, ' ') : 'Equipment'}
+            </Text>
+            {selectedEquipment && (
+              <TouchableOpacity onPress={() => setSelectedEquipment(null)}>
+                <Ionicons name="close-circle" size={16} color="#fff" />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -163,6 +207,65 @@ export default function AddExercise() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Muscle Group Modal */}
+      <Modal visible={muscleGroupModalVisible} transparent animationType="slide">
+        <View style={styles.filterModalOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setMuscleGroupModalVisible(false)} />
+          <View style={[styles.filterModalContent, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+            <Text style={[styles.filterModalTitle, { color: colors.text }]}>Muscle Group</Text>
+            <ScrollView>
+              {MUSCLE_GROUPS.map((mg) => (
+                <TouchableOpacity
+                  key={mg}
+                  style={[styles.filterModalOption, selectedMuscleGroup === mg && { backgroundColor: '#3366FF22' }]}
+                  onPress={() => {
+                    setSelectedMuscleGroup(mg === selectedMuscleGroup ? null : mg)
+                    setMuscleGroupModalVisible(false)
+                  }}
+                >
+                  <Text style={[styles.filterModalOptionText, { color: selectedMuscleGroup === mg ? '#3366FF' : colors.text, fontWeight: selectedMuscleGroup === mg ? '700' : '400' }]}>
+                    {mg.replace(/_/g, ' ')}
+                  </Text>
+                  {selectedMuscleGroup === mg && (
+                    <Ionicons name="checkmark" size={18} color="#3366FF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Equipment Modal */}
+      <Modal visible={equipmentModalVisible} transparent animationType="slide">
+        <View style={styles.filterModalOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setEquipmentModalVisible(false)} />
+          <View style={[styles.filterModalContent, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+            <Text style={[styles.filterModalTitle, { color: colors.text }]}>Equipment</Text>
+            <ScrollView>
+              {EQUIPMENT_LIST.map((eq) => (
+                <TouchableOpacity
+                  key={eq}
+                  style={[styles.filterModalOption, selectedEquipment === eq && { backgroundColor: '#3366FF22' }]}
+                  onPress={() => {
+                    setSelectedEquipment(eq === selectedEquipment ? null : eq)
+                    setEquipmentModalVisible(false)
+                  }}
+                >
+                  <Text style={[styles.filterModalOptionText, { color: selectedEquipment === eq ? '#3366FF' : colors.text, fontWeight: selectedEquipment === eq ? '700' : '400' }]}>
+                    {eq.replace(/_/g, ' ')}
+                  </Text>
+                  {selectedEquipment === eq && (
+                    <Ionicons name="checkmark" size={18} color="#3366FF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </>
   )
 }
@@ -233,4 +336,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  filterModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  filterModalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '70%' },
+  filterModalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16 },
+  filterModalOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 8 },
+  filterModalOptionText: { fontSize: 15 },
 })
