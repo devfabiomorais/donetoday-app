@@ -3,14 +3,14 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  FlatList,
+  Image,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { darkTheme, lightTheme } from '../../constants/colors'
@@ -26,7 +26,7 @@ export default function AddExercise() {
 
   const [exercises, setExercises] = useState<any[]>([])
   const [filtered, setFiltered] = useState<any[]>([])
-  const [selected, setSelected] = useState<any[]>([])
+  const [selected, setSelected] = useState<any[]>(routineStore.selectedExercises || [])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -38,6 +38,9 @@ export default function AddExercise() {
   const MUSCLE_GROUPS = ['UPPER_BACK', 'LOWER_BACK', 'LATISSIMUS', 'SIDE_SHOULDERS', 'FRONT_SHOULDERS', 'REAR_SHOULDERS', 'ROTATOR_CUFF', 'SHOULDERS', 'CHEST', 'UPPER_CHEST', 'LOWER_CHEST', 'TRICEPS', 'BICEPS', 'FOREARMS', 'HAND_MUSCLES', 'GRIP_MUSCLES', 'TRAPEZIUS', 'NECK', 'JAW', 'ABDOMINALS', 'OBLIQUES', 'SERRATUS', 'DEEP_CORE', 'GLUTES', 'HAMSTRINGS', 'QUADRICEPS', 'ABDUCTORS', 'ADDUCTORS', 'HIP_FLEXORS', 'HIPS', 'CALVES', 'TIBIALIS_ANTERIOR', 'FEET']
 
   const EQUIPMENT_LIST = ['TRX', 'GYMNASTIC_RINGS', 'PARALLETTES', 'RESISTANCE_BANDS', 'RESISTANCE_TUBES', 'JUMP_ROPE', 'TIRE', 'AB_WHEEL', 'WEIGHTED_VEST', 'DUMBBELL', 'KETTLEBELL', 'BARBELL', 'WEIGHT_PLATES', 'MEDICINE_BALL', 'BALL', 'SLAM_BALL', 'BULGARIAN_BAG', 'SANDBAG', 'BATTLE_ROPE', 'GRIP_STRENGTHENERS', 'ANKLE_WRIST_WEIGHTS', 'PORTABLE_STEP_PLATFORM', 'AGILITY_LADDER', 'CONES', 'PUNCHING_BAG', 'FREESTANDING_PUNCHING_BAG', 'SPEED_BAG', 'DOUBLE_END_BAG', 'FOCUS_MITTS', 'THAI_PADS', 'BOXING_GLOVES', 'MMA_GLOVES', 'HAND_WRAPS', 'SHIN_GUARDS', 'HEADGEAR', 'MOUTHGUARD', 'OTHER', 'NO_EQUIPMENT']
+
+  const [myExercises, setMyExercises] = useState<any[]>([])
+  const [globalExercises, setGlobalExercises] = useState<any[]>([])
 
   useEffect(() => {
     loadExercises()
@@ -69,26 +72,56 @@ export default function AddExercise() {
 
   async function loadExercises() {
     try {
-      const [global, custom] = await Promise.all([getExercises(), getMyExercises()])
-      const all = [...global, ...custom]
+      const [global, custom] = await Promise.all([
+        getExercises(),
+        getMyExercises(),
+      ])
+
+      // 👇 separa
+      setGlobalExercises(global)
+      setMyExercises(custom)
+
+      // ainda mantém tudo junto pro filtro funcionar
+      const all = [...custom, ...global]
+
       setExercises(all)
       setFiltered(all)
+
+      if (routineStore.selectedExercises?.length) {
+        setSelected(routineStore.selectedExercises)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   function toggleExercise(exercise: any) {
-    setSelected((prev) =>
-      prev.find((e) => e.id === exercise.id)
-        ? prev.filter((e) => e.id !== exercise.id)
-        : [...prev, exercise]
-    )
+    setSelected((prev) => {
+      let updated
+
+      if (prev.find((e) => e.id === exercise.id)) {
+        updated = prev.filter((e) => e.id !== exercise.id)
+      } else {
+        updated = [...prev, exercise]
+      }
+
+      routineStore.setSelectedExercises(updated)
+      return updated
+    })
   }
 
   function handleAdd() {
-    const current = routineStore.selectedExercises
-    routineStore.setSelectedExercises([...current, ...selected])
+    const current = routineStore.selectedExercises || []
+
+    const merged = [...current]
+
+    selected.forEach((ex) => {
+      if (!merged.find((e) => e.id === ex.id)) {
+        merged.push(ex)
+      }
+    })
+
+    routineStore.setSelectedExercises(merged)
     router.back()
   }
 
@@ -104,7 +137,11 @@ export default function AddExercise() {
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Add Exercise</Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => router.push('/routine/create-exercise')}>
+          <Text style={{ color: '#3366FF', fontSize: 16, fontWeight: '600' }}>
+            Create
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -155,47 +192,145 @@ export default function AddExercise() {
         </View>
 
         {/* Subtitle */}
-        <Text style={[styles.subtitle, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+        {/* <Text style={[styles.subtitle, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
           All exercises
-        </Text>
+        </Text> */}
 
         {/* List */}
         {loading ? (
           <ActivityIndicator color="#3366FF" style={{ marginTop: 40 }} />
         ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            renderItem={({ item }) => {
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+
+            {/* ===================== MY EXERCISES ===================== */}
+            {myExercises.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Made by you
+                </Text>
+
+                {myExercises.map((item) => {
+                  const isSelected = selected.find((e) => e.id === item.id)
+
+                  return (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.exerciseRow,
+                        { borderBottomColor: theme === 'dark' ? '#333' : '#eee' },
+                      ]}
+                    >
+                      <View style={[styles.avatar, { backgroundColor: colors.input }]}>
+                        {item.imageUrl ? (
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            style={styles.avatarImage}
+                          />
+                        ) : (
+                          <Ionicons
+                            name={item.isCustom ? 'person-outline' : 'body-outline'}
+                            size={24}
+                            color={theme === 'dark' ? '#aaa' : '#666'}
+                          />
+                        )}
+                      </View>
+
+                      <View style={styles.exerciseInfo}>
+                        <Text style={[styles.exerciseName, { color: colors.text }]}>
+                          {item.name}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.exerciseMuscle,
+                            { color: theme === 'dark' ? '#aaa' : '#666' },
+                          ]}
+                        >
+                          {item.muscleGroups?.[0]?.replace(/_/g, ' ')}
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity onPress={() => toggleExercise(item)}>
+                        <Ionicons
+                          name={
+                            isSelected
+                              ? 'checkmark-circle'
+                              : 'add-circle-outline'
+                          }
+                          size={28}
+                          color={
+                            isSelected
+                              ? '#3366FF'
+                              : theme === 'dark'
+                                ? '#aaa'
+                                : '#666'
+                          }
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )
+                })}
+              </>
+            )}
+
+            {/* ===================== GLOBAL ===================== */}
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              All exercises
+            </Text>
+
+            {globalExercises.map((item) => {
               const isSelected = selected.find((e) => e.id === item.id)
+
               return (
-                <View style={[styles.exerciseRow, { borderBottomColor: theme === 'dark' ? '#333' : '#eee' }]}>
-                  {/* Avatar placeholder */}
+                <View
+                  key={item.id}
+                  style={[
+                    styles.exerciseRow,
+                    { borderBottomColor: theme === 'dark' ? '#333' : '#eee' },
+                  ]}
+                >
                   <View style={[styles.avatar, { backgroundColor: colors.input }]}>
-                    <Ionicons name="body-outline" size={24} color={theme === 'dark' ? '#aaa' : '#666'} />
+                    <Ionicons
+                      name="body-outline"
+                      size={24}
+                      color={theme === 'dark' ? '#aaa' : '#666'}
+                    />
                   </View>
 
-                  {/* Info */}
                   <View style={styles.exerciseInfo}>
-                    <Text style={[styles.exerciseName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.exerciseMuscle, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+                    <Text style={[styles.exerciseName, { color: colors.text }]}>
+                      {item.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.exerciseMuscle,
+                        { color: theme === 'dark' ? '#aaa' : '#666' },
+                      ]}
+                    >
                       {item.muscleGroups?.[0]?.replace(/_/g, ' ')}
                     </Text>
                   </View>
 
-                  {/* Add button */}
                   <TouchableOpacity onPress={() => toggleExercise(item)}>
                     <Ionicons
-                      name={isSelected ? 'checkmark-circle' : 'add-circle-outline'}
+                      name={
+                        isSelected
+                          ? 'checkmark-circle'
+                          : 'add-circle-outline'
+                      }
                       size={28}
-                      color={isSelected ? '#3366FF' : theme === 'dark' ? '#aaa' : '#666'}
+                      color={
+                        isSelected
+                          ? '#3366FF'
+                          : theme === 'dark'
+                            ? '#aaa'
+                            : '#666'
+                      }
                     />
                   </TouchableOpacity>
                 </View>
               )
-            }}
-          />
+            })}
+          </ScrollView>
         )}
       </View>
 
@@ -341,4 +476,15 @@ const styles = StyleSheet.create({
   filterModalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 16 },
   filterModalOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 8 },
   filterModalOptionText: { fontSize: 15 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
+  },
 })

@@ -1,3 +1,4 @@
+import { useAuth } from '@/context/AuthContext'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
@@ -15,10 +16,14 @@ export default function Workout() {
   const [routines, setRoutines] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const { user } = useAuth()
+
   useFocusEffect(
     useCallback(() => {
+      if (!user) return
+
       loadRoutines()
-    }, [])
+    }, [user])
   )
 
   async function loadRoutines() {

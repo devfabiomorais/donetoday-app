@@ -175,8 +175,10 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return
+
       loadWorkouts()
-    }, [])
+    }, [user])
   )
 
   async function loadWorkouts() {
