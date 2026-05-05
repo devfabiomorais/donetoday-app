@@ -1,60 +1,82 @@
-import { useAuth } from '@/context/AuthContext'
-import { Ionicons } from '@expo/vector-icons'
-import { useFocusEffect, useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { darkTheme, lightTheme } from '../../constants/colors'
-import { useTheme } from '../../context/ThemeContext'
-import { getRoutines } from '../../services/routines'
-import { startWorkout } from '../../services/workouts'
+import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { darkTheme, lightTheme } from "../../constants/colors";
+import { useTheme } from "../../context/ThemeContext";
+import { getRoutines } from "../../services/routines";
+import { startWorkout } from "../../services/workouts";
 
 export default function Workout() {
-  const { theme } = useTheme()
-  const colors = theme === 'dark' ? darkTheme : lightTheme
-  const router = useRouter()
+  const { theme } = useTheme();
+  const colors = theme === "dark" ? darkTheme : lightTheme;
+  const router = useRouter();
 
-  const [routines, setRoutines] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [routines, setRoutines] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { user } = useAuth()
+  const { user } = useAuth();
+
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      if (!user) return
+      if (!user) return;
 
-      loadRoutines()
-    }, [user])
-  )
+      loadRoutines();
+    }, [user]),
+  );
 
   async function loadRoutines() {
     try {
-      setLoading(true)
-      const data = await getRoutines()
-      setRoutines(data)
+      setLoading(true);
+      const data = await getRoutines();
+      setRoutines(data);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await loadRoutines();
+    setRefreshing(false);
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Routines</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Routines
+      </Text>
 
       <View style={styles.buttonsRow}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.input }]}
-          onPress={() => router.push('/routine/create')}
+          onPress={() => router.push("/routine/create")}
         >
           <Ionicons name="clipboard-outline" size={20} color={colors.text} />
-          <Text style={[styles.buttonText, { color: colors.text }]}>New Routine</Text>
+          <Text style={[styles.buttonText, { color: colors.text }]}>
+            New Routine
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.input }]}
-          onPress={() => { }}
+          onPress={() => {}}
         >
           <Ionicons name="search-outline" size={20} color={colors.text} />
-          <Text style={[styles.buttonText, { color: colors.text }]}>Explore</Text>
+          <Text style={[styles.buttonText, { color: colors.text }]}>
+            Explore
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -62,8 +84,17 @@ export default function Workout() {
         <ActivityIndicator color="#3366FF" style={{ marginTop: 40 }} />
       ) : routines.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="barbell-outline" size={48} color={theme === 'dark' ? '#555' : '#ccc'} />
-          <Text style={[styles.emptyText, { color: theme === 'dark' ? '#555' : '#ccc' }]}>
+          <Ionicons
+            name="barbell-outline"
+            size={48}
+            color={theme === "dark" ? "#555" : "#ccc"}
+          />
+          <Text
+            style={[
+              styles.emptyText,
+              { color: theme === "dark" ? "#555" : "#ccc" },
+            ]}
+          >
             No routines yet. Create your first one!
           </Text>
         </View>
@@ -74,10 +105,19 @@ export default function Workout() {
           contentContainerStyle={{ paddingBottom: 40 }}
           style={{ marginTop: 16 }}
           renderItem={({ item }) => (
-            <View style={[styles.routineCard, { backgroundColor: colors.input }]}>
+            <View
+              style={[styles.routineCard, { backgroundColor: colors.input }]}
+            >
               <View style={styles.routineInfo}>
-                <Text style={[styles.routineName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.routineExercises, { color: theme === 'dark' ? '#aaa' : '#666' }]}>
+                <Text style={[styles.routineName, { color: colors.text }]}>
+                  {item.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.routineExercises,
+                    { color: theme === "dark" ? "#aaa" : "#666" },
+                  ]}
+                >
                   {item.exercises?.length ?? 0} exercises
                 </Text>
               </View>
@@ -87,60 +127,73 @@ export default function Workout() {
                   const workout = await startWorkout({
                     name: item.name,
                     routineId: item.id,
-                  })
+                  });
                   router.push({
-                    pathname: '/workout/active',
+                    pathname: "/workout/active",
                     params: {
                       workoutId: workout.id,
                       routineId: item.id,
                       routineName: item.name,
                       exercises: JSON.stringify(item.exercises),
                     },
-                  })
+                  });
                 }}
               >
                 <Text style={styles.startButtonText}>Start</Text>
               </TouchableOpacity>
             </View>
           )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#3366FF"
+              colors={["#3366FF"]}
+            />
+          }
         />
       )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  buttonsRow: { flexDirection: 'row', gap: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  buttonsRow: { flexDirection: "row", gap: 12 },
   button: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     padding: 14,
     borderRadius: 12,
   },
-  buttonText: { fontSize: 15, fontWeight: '600' },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 16 },
-  emptyText: { fontSize: 14, textAlign: 'center', maxWidth: 240 },
+  buttonText: { fontSize: 15, fontWeight: "600" },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    gap: 16,
+  },
+  emptyText: { fontSize: 14, textAlign: "center", maxWidth: 240 },
   routineCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
   },
   routineInfo: { flex: 1 },
-  routineName: { fontSize: 16, fontWeight: '700' },
+  routineName: { fontSize: 16, fontWeight: "700" },
   routineExercises: { fontSize: 13, marginTop: 2 },
   startButton: {
-    backgroundColor: '#3366FF',
+    backgroundColor: "#3366FF",
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  startButtonText: { color: '#fff', fontWeight: '700' },
-})
+  startButtonText: { color: "#fff", fontWeight: "700" },
+});
